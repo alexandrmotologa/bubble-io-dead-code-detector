@@ -38,10 +38,21 @@ export interface RuleConfig {
   [key: string]: unknown;
 }
 
+export interface IgnoreConfig {
+  workflows?: string[];
+  fields?: string[];
+  pages?: string[];
+  plugins?: string[];
+  optionSets?: string[];
+  styles?: string[];
+}
+
 export interface RuleContext {
   app: ParsedBubbleApp;
   graph: DependencyGraph;
   config: RuleConfig;
+  /** Items explicitly ignored via .bubblerc.json ignore lists */
+  ignore: IgnoreConfig;
 }
 
 export interface BubbleRule {
@@ -53,4 +64,27 @@ export interface BubbleRule {
   defaultEnabled: boolean;
 
   check(context: RuleContext): Finding[];
+}
+
+/**
+ * Returns true if the given id or name appears in any of the provided ignore lists.
+ * Rules call this before pushing a Finding.
+ */
+export function isIgnored(
+  id: string,
+  name: string,
+  lists: Array<string[] | undefined>,
+): boolean {
+  const lowerName = name.toLowerCase();
+  const lowerId = id.toLowerCase();
+  for (const list of lists) {
+    if (!list) continue;
+    for (const entry of list) {
+      const lower = entry.toLowerCase();
+      if (lowerId === lower || lowerName === lower || lowerName.includes(lower)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }

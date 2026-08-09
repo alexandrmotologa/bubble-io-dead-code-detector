@@ -7,7 +7,7 @@ import { buildDependencyGraph } from './graph/edge-resolver.js';
 import { runRules, type RulesConfig } from './rules/rule-engine.js';
 import { calculateHealthScore, type HealthScore, type HealthScoreWeights } from './health-scorer.js';
 import type { DependencyGraph, GraphStats } from './graph/dag.js';
-import type { Finding } from './rules/rule.interface.js';
+import type { Finding, IgnoreConfig } from './rules/rule.interface.js';
 
 export type { Finding, HealthScore };
 
@@ -27,6 +27,8 @@ export interface AnalysisOptions {
   healthWeights?: Partial<HealthScoreWeights>;
   only?: string[];
   minConfidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Items to exclude from analysis — loaded from .bubblerc.json ignore section */
+  ignore?: IgnoreConfig;
 }
 
 export function analyzeApp(
@@ -40,8 +42,9 @@ export function analyzeApp(
   const graphStats = graph.getStats();
 
   // Run all rules
+  const ignore: IgnoreConfig = options.ignore ?? {};
   const { findings: allFindings, rulesRun } = runRules(
-    { app, graph },
+    { app, graph, ignore },
     options.rulesConfig,
     options.only,
   );

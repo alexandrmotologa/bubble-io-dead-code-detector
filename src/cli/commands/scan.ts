@@ -13,6 +13,7 @@ import { writeJsonReport } from '../../reporters/json-reporter.js';
 import { writeMarkdownReport } from '../../reporters/markdown-reporter.js';
 import { writeHtmlReport } from '../../reporters/html-reporter.js';
 import { writeSarifReport } from '../../reporters/sarif-reporter.js';
+import { writeCsvReport } from '../../reporters/csv-reporter.js';
 import { loadConfig } from '../../config/config-loader.js';
 
 export function registerScanCommand(program: Command): void {
@@ -23,6 +24,7 @@ export function registerScanCommand(program: Command): void {
     .option('--json', 'Export machine-readable audit-report.json')
     .option('--html', 'Generate interactive HTML visual graph report')
     .option('--markdown', 'Generate Notion/Confluence-ready Markdown report')
+    .option('--csv', 'Export audit-report.csv for Excel/Google Sheets')
     .option('--sarif', 'Export SARIF report for CI/CD (GitHub Actions, GitLab CI)')
     .option('--output-dir <dir>', 'Output directory for reports', './audit-results')
     .option('--only <rules>', 'Run only specific rules (comma-separated: dead-workflow,dead-field,...)')
@@ -38,6 +40,7 @@ async function runScan(options: {
   json?: boolean;
   html?: boolean;
   markdown?: boolean;
+  csv?: boolean;
   sarif?: boolean;
   outputDir: string;
   only?: string;
@@ -47,15 +50,12 @@ async function runScan(options: {
   const spinner = ora('Reading Bubble app export...').start();
 
   try {
-    // Load config
     const config = loadConfig();
 
-    // Read & parse
     spinner.text = 'Parsing .bubble file...';
     const rawApp = readBubbleFile(options.file);
     const parsedApp = parseBubbleApp(rawApp);
 
-    // Analyze
     spinner.text = 'Building dependency graph...';
     const only = options.only ? options.only.split(',').map((s) => s.trim()) : undefined;
     const minConf = (options.minConfidence as 'HIGH' | 'MEDIUM' | 'LOW') ?? 'LOW';
@@ -65,6 +65,15 @@ async function runScan(options: {
       rulesConfig: config.rules,
       only,
       minConfidence: minConf,
+      // Pass ignore lists from .bubblerc.json to all rules
+      ignore: {
+        workflows: config.ignore?.workflows,
+        fields: config.ignore?.fields,
+        pages: config.ignore?.pages,
+        plugins: config.ignore?.plugins,
+        optionSets: (config.ignore as Record<string, string[] | undefined>)?.['optionSets'],
+        styles: (config.ignore as Record<string, string[] | undefined>)?.['styles'],
+      },
     });
 
     spinner.succeed(
@@ -73,10 +82,8 @@ async function runScan(options: {
       ),
     );
 
-    // Print console report
     printConsoleReport(result);
 
-    // Generate requested output formats
     const outputDir = resolve(options.outputDir);
     const generated: string[] = [];
 
@@ -84,17 +91,18 @@ async function runScan(options: {
       const p = writeJsonReport(result, outputDir);
       generated.push(chalk.dim(`  📄 JSON: ${p}`));
     }
-
     if (options.html) {
       const p = writeHtmlReport(result, outputDir);
       generated.push(chalk.dim(`  🌐 HTML: ${p}`));
     }
-
     if (options.markdown) {
       const p = writeMarkdownReport(result, outputDir);
       generated.push(chalk.dim(`  📝 Markdown: ${p}`));
     }
-
+    if (options.csv) {
+      const p = writeCsvReport(result, outputDir);
+      generated.push(chalk.dim(`  📊 CSV: ${p}`));
+    }
     if (options.sarif) {
       const p = writeSarifReport(result, outputDir);
       generated.push(chalk.dim(`  📋 SARIF: ${p}`));
@@ -106,14 +114,9 @@ async function runScan(options: {
       console.log('');
     }
 
-    // Exit code check
     const failBelow = options.failBelow ? parseInt(options.failBelow) : config.healthScore?.failBelow;
     if (failBelow !== undefined && result.healthScore.score < failBelow) {
-      console.log(
-        chalk.red.bold(
-          `  ✖ Health score ${result.healthScore.score} is below threshold ${failBelow} — failing`,
-        ),
-      );
+      console.log(chalk.red.bold(`  ✖ Health score ${result.healthScore.score} is below threshold ${failBelow} — failing`));
       process.exit(1);
     }
   } catch (err) {

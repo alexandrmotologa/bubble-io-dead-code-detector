@@ -151,3 +151,75 @@ describe('readBubbleFile errors', () => {
     expect(() => readBubbleFile('./does-not-exist.bubble')).toThrow(BubbleReadError);
   });
 });
+
+// ─── Phase 2 Tests ────────────────────────────────────────────────────────────
+
+describe('ignore filter', () => {
+  it('should suppress a workflow finding when its ID is in the ignore list', () => {
+    const parsed = parseBubbleApp(MOCK_APP as never);
+    const result = analyzeApp(parsed, {
+      ignore: { workflows: ['wf_dead'] },
+    });
+    const deadByWfDead = result.findings.filter(
+      (f) => f.ruleId === 'dead-workflow' && f.location.id === 'wf_dead',
+    );
+    expect(deadByWfDead.length).toBe(0);
+  });
+
+  it('should NOT suppress findings not in the ignore list', () => {
+    const parsed = parseBubbleApp(MOCK_APP as never);
+    const withIgnore = analyzeApp(parsed, { ignore: { workflows: ['wf_dead'] } });
+    const without = analyzeApp(parsed);
+    // Total findings should be equal or less with ignore (never more)
+    expect(withIgnore.findings.length).toBeLessThanOrEqual(without.findings.length);
+  });
+});
+
+describe('CSV reporter', () => {
+  it('should produce CSV output with correct headers', async () => {
+    const { writeCsvReport } = await import('../src/reporters/csv-reporter.js');
+    const parsed = parseBubbleApp(MOCK_APP as never);
+    const result = analyzeApp(parsed);
+    const tmpDir = './test-output-csv';
+    const outputPath = writeCsvReport(result, tmpDir);
+    const { readFileSync, existsSync, rmSync } = await import('fs');
+    expect(existsSync(outputPath)).toBe(true);
+    const content = readFileSync(outputPath, 'utf-8');
+    expect(content).toContain('rule_id,rule_name,severity,confidence');
+    expect(content).toContain('safe_to_delete');
+    // Clean up
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+});
+
+describe('plugin registry', () => {
+  it('should return a known name for a registered plugin ID', async () => {
+    const { getPluginName } = await import('../src/data/plugin-registry.js');
+    const name = getPluginName('1476822950457x632962508451020800');
+    expect(name).toBe('Stripe');
+  });
+
+  it('should return undefined for an unknown plugin ID', async () => {
+    const { getPluginName } = await import('../src/data/plugin-registry.js');
+    const name = getPluginName('0000000000000x000000000000000000');
+    expect(name).toBeUndefined();
+  });
+});
+
+describe('isIgnored helper', () => {
+  it('should match by exact id', async () => {
+    const { isIgnored } = await import('../src/analyzer/rules/rule.interface.js');
+    expect(isIgnored('wf_abc', 'some workflow', [['wf_abc']])).toBe(true);
+  });
+
+  it('should match by name (case-insensitive)', async () => {
+    const { isIgnored } = await import('../src/analyzer/rules/rule.interface.js');
+    expect(isIgnored('wf_xyz', 'Legacy Migration', [['legacy migration']])).toBe(true);
+  });
+
+  it('should return false when no match', async () => {
+    const { isIgnored } = await import('../src/analyzer/rules/rule.interface.js');
+    expect(isIgnored('wf_xyz', 'Active Workflow', [['legacy']])).toBe(false);
+  });
+});
+

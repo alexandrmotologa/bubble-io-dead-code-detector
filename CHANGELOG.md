@@ -5,6 +5,39 @@ All notable changes to `bubble-io-dead-code-detector` will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-09
+
+### Added
+
+#### Core Engine
+- **`ignore` filter** — `.bubblerc.json` `ignore` lists are now fully wired to all 5 dead-code rules. Items in `ignore.workflows`, `ignore.fields`, `ignore.plugins`, `ignore.optionSets`, `ignore.styles` are silently skipped during analysis.
+- **Dynamic field confidence** — fields belonging to data types that appear in Search expressions are now downgraded from `HIGH` → `MEDIUM` confidence, preventing false positives on types where fields may be accessed dynamically.
+- **Plugin name registry** — 60+ popular Bubble plugin IDs are now mapped to human-readable names (`Ionic Elements`, `Stripe`, `Google Maps`, etc.). Reports now show plugin names instead of raw numeric IDs.
+
+#### New CLI Commands
+- **`watch`** — Auto re-scans a `.bubble` file whenever it changes on disk. Shows delta (fixed / new issues) between scans. Uses Node.js built-in `fs.watch()` — zero new dependencies.
+- **`diff`** — Compares two `.bubble` exports and reports: health score delta, fixed issues, new issues, unchanged count. Supports `--json` output.
+
+#### Extended `clean` — Opt-In Targets
+- **`--only dead-plugin`** — Removes inactive plugins from `settings.client_safe.plugins`
+- **`--only dead-option-set`** — Removes unused option sets from `option_sets`
+- **`--only dead-style`** — Removes unused styles from `styles`
+
+All targets are fully opt-in. None apply by default. Dry-run + backup always enforced.
+
+#### Reports
+- **CSV** — New `--csv` flag exports `audit-report.csv` for Excel / Google Sheets
+
+#### VS Code Extension
+- Scaffolded at `vscode-extension/` — right-click `.bubble` files to scan, findings in Problems panel, HTML report auto-opens in browser
+
+#### Documentation
+- `USAGE.md` — Full English usage guide: how to export a `.bubble` file, all CLI commands, workflow guide, CI/CD integration, FAQ
+
+#### Tests
+- 8 new tests: ignore filter, isIgnored helper, CSV output, plugin registry lookup
+- **Total: 19 tests — all passing**
+
 ## [1.0.0] - 2026-08-09
 
 ### Added

@@ -10,6 +10,8 @@ import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
 import { registerScanCommand } from './cli/commands/scan.js';
 import { registerCleanCommand } from './cli/commands/clean.js';
+import { registerWatchCommand } from './cli/commands/watch.js';
+import { registerDiffCommand } from './cli/commands/diff.js';
 import { runInteractiveTui } from './cli/interactive.js';
 
 // Read package.json version
@@ -37,10 +39,12 @@ program
     `
 Examples:
   $ bubble-detector scan --file ./app.bubble
-  $ bubble-detector scan --file ./app.bubble --html --json --output-dir ./audit
+  $ bubble-detector scan --file ./app.bubble --html --json --csv --output-dir ./audit
   $ bubble-detector scan --file ./app.bubble --fail-below 70
   $ bubble-detector clean --file ./app.bubble --dry-run
-  $ bubble-detector clean --file ./app.bubble --output ./cleaned.bubble
+  $ bubble-detector clean --file ./app.bubble --only dead-plugin,dead-option-set
+  $ bubble-detector watch --file ./app.bubble --html
+  $ bubble-detector diff --before ./v1.bubble --after ./v2.bubble
 
 Run without arguments to launch the interactive TUI:
   $ bubble-detector
@@ -50,6 +54,8 @@ Run without arguments to launch the interactive TUI:
 // Register commands
 registerScanCommand(program);
 registerCleanCommand(program);
+registerWatchCommand(program);
+registerDiffCommand(program);
 
 // Add validate command (lightweight)
 program
@@ -84,7 +90,7 @@ program
     }
     const defaultConfig = {
       $schema: 'https://unpkg.com/bubble-io-dead-code-detector@latest/schemas/bubblerc.json',
-      ignore: { workflows: [], fields: [], pages: [], plugins: [] },
+      ignore: { workflows: [], fields: [], pages: [], plugins: [], optionSets: [], styles: [] },
       rules: {
         'dead-workflow': { enabled: true, severity: 'error' },
         'dead-field': { enabled: true, severity: 'warning' },

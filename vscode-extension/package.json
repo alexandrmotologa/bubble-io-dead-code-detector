@@ -1,0 +1,95 @@
+{
+  "name": "bubble-dead-code-detector-vscode",
+  "displayName": "Bubble.io Dead Code Detector",
+  "description": "Detect dead code, unused plugins, fields, and styles in Bubble.io app exports. Shows health score and findings directly in VS Code.",
+  "version": "1.0.0",
+  "publisher": "bubble-tools",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Other"],
+  "keywords": ["bubble", "bubble.io", "dead code", "linter", "no-code"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexandrmotologa/bubble-io-dead-code-detector"
+  },
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bubbleDetector.scan",
+        "title": "Bubble: Run Dead Code Scan",
+        "icon": "$(search)"
+      },
+      {
+        "command": "bubbleDetector.scanWithHtml",
+        "title": "Bubble: Scan + Open HTML Report"
+      },
+      {
+        "command": "bubbleDetector.clean",
+        "title": "Bubble: Clean (dry-run preview)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .bubble",
+          "command": "bubbleDetector.scan",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceExtname == .bubble",
+          "command": "bubbleDetector.scanWithHtml",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "resourceExtname == .bubble",
+          "command": "bubbleDetector.scan",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Bubble Dead Code Detector",
+      "properties": {
+        "bubbleDetector.minConfidence": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW"],
+          "default": "MEDIUM",
+          "description": "Minimum confidence level to report findings"
+        },
+        "bubbleDetector.outputDir": {
+          "type": "string",
+          "default": "./audit-results",
+          "description": "Output directory for generated reports"
+        },
+        "bubbleDetector.autoOpenHtml": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the HTML report after scan"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsup src/extension.ts --format cjs --out-dir dist --no-splitting --external vscode",
+    "watch": "tsup src/extension.ts --format cjs --out-dir dist --no-splitting --external vscode --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "bubble-io-dead-code-detector": "^1.0.0"
+  }
+}
