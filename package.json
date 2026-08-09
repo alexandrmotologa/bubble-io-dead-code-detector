@@ -1,0 +1,71 @@
+{
+  "name": "bubble-io-dead-code-detector",
+  "version": "1.0.0",
+  "description": "Dead code detector, dependency analyzer & health scorer for Bubble.io applications. Finds unused workflows, orphaned UI elements, unused database fields, inactive plugins, and more.",
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "bubble",
+    "bubble.io",
+    "no-code",
+    "dead-code",
+    "audit",
+    "cli",
+    "linter",
+    "technical-debt",
+    "dependency-graph"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandrmotologa/bubble-io-dead-code-detector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexandrmotologa/bubble-io-dead-code-detector/issues"
+  },
+  "homepage": "https://github.com/alexandrmotologa/bubble-io-dead-code-detector#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "bubble-io-dead-code-detector": "./bin/bubble-detector.js",
+    "bubble-detector": "./bin/bubble-detector.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "schemas"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.1",
+    "chalk": "^5.4.1",
+    "chokidar": "^3.6.0",
+    "commander": "^12.1.0",
+    "fs-extra": "^11.3.0",
+    "graphology": "^0.25.4",
+    "ora": "^8.2.0",
+    "picocolors": "^1.1.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.15.30",
+    "@typescript-eslint/eslint-plugin": "^8.66.0",
+    "@typescript-eslint/parser": "^8.66.0",
+    "eslint": "^9.31.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

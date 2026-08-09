@@ -1,0 +1,12 @@
+node_modules/
+dist/
+audit-results/
+backups/
+*.bubble.bak
+coverage/
+.DS_Store
+*.log
+
+# IMPORTANT: Never commit real .bubble files — they may contain sensitive app data
+*.bubble
+!tests/fixtures/*.bubble

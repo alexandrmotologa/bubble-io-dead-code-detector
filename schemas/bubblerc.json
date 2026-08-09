@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BubbleRc Configuration",
+  "description": "Configuration file for bubble-io-dead-code-detector",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "ignore": {
+      "type": "object",
+      "description": "IDs or slugs to ignore during analysis",
+      "properties": {
+        "workflows": { "type": "array", "items": { "type": "string" }, "description": "Workflow IDs to ignore" },
+        "fields": { "type": "array", "items": { "type": "string" }, "description": "Field slugs to ignore (format: dataTypeSlug.fieldSlug)" },
+        "pages": { "type": "array", "items": { "type": "string" }, "description": "Page names or IDs to ignore" },
+        "plugins": { "type": "array", "items": { "type": "string" }, "description": "Plugin IDs to ignore" }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "description": "Per-rule configuration",
+      "properties": {
+        "dead-workflow": { "$ref": "#/definitions/ruleConfig" },
+        "dead-field": { "$ref": "#/definitions/ruleConfig" },
+        "dead-plugin": { "$ref": "#/definitions/ruleConfig" },
+        "dead-style": { "$ref": "#/definitions/ruleConfig" },
+        "dead-option-set": { "$ref": "#/definitions/ruleConfig" },
+        "complexity": {
+          "allOf": [
+            { "$ref": "#/definitions/ruleConfig" },
+            {
+              "properties": {
+                "maxWorkflowActions": { "type": "number", "default": 15, "description": "Max actions per workflow before flagging" },
+                "maxPageElements": { "type": "number", "default": 200, "description": "Max elements per page before flagging" },
+                "maxNestingDepth": { "type": "number", "default": 8, "description": "Max element nesting depth before flagging" }
+              }
+            }
+          ]
+        },
+        "security": {
+          "allOf": [
+            { "$ref": "#/definitions/ruleConfig" },
+            {
+              "properties": {
+                "checkPrivacyRules": { "type": "boolean", "default": true },
+                "checkExposedEndpoints": { "type": "boolean", "default": true },
+                "checkHardcodedKeys": { "type": "boolean", "default": true }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": { "$ref": "#/definitions/ruleConfig" }
+    },
+    "healthScore": {
+      "type": "object",
+      "properties": {
+        "failBelow": { "type": "number", "minimum": 0, "maximum": 100, "description": "Exit with code 1 if score is below this value (CI use)" },
+        "weights": {
+          "type": "object",
+          "description": "Custom weights for each category (0-100, must sum to ≤100)",
+          "properties": {
+            "deadWorkflows": { "type": "number" },
+            "deadFields": { "type": "number" },
+            "deadPlugins": { "type": "number" },
+            "deadStyles": { "type": "number" },
+            "deadOptionSets": { "type": "number" },
+            "complexity": { "type": "number" },
+            "security": { "type": "number" }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "dir": { "type": "string", "default": "./audit-results", "description": "Output directory for all reports" },
+        "formats": {
+          "type": "array",
+          "items": { "enum": ["json", "html", "markdown", "sarif", "csv"] },
+          "description": "Default output formats to generate on every scan"
+        },
+        "openHtmlAfterScan": { "type": "boolean", "default": false }
+      }
+    },
+    "clean": {
+      "type": "object",
+      "properties": {
+        "backupDir": { "type": "string", "default": "./backups" },
+        "minConfidence": { "enum": ["HIGH", "MEDIUM", "LOW"], "default": "HIGH" },
+        "requireConfirmation": { "type": "boolean", "default": true },
+        "dryRunFirst": { "type": "boolean", "default": true }
+      }
+    }
+  },
+  "definitions": {
+    "ruleConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "severity": { "enum": ["error", "warning", "info"], "description": "Override the default severity for this rule" }
+      }
+    }
+  }
+}
