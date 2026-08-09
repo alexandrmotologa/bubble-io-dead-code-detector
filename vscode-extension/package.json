@@ -3,7 +3,7 @@
   "displayName": "Bubble.io Dead Code Detector",
   "description": "Detect dead code, unused plugins, fields, and styles in Bubble.io app exports. Shows health score and findings directly in VS Code.",
   "version": "1.0.0",
-  "publisher": "bubble-tools",
+  "publisher": "alexandrmotologa",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.85.0"
