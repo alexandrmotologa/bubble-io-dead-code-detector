@@ -2,7 +2,7 @@
   "name": "bubble-io-dead-code-detector",
   "version": "1.1.0",
   "description": "Dead code detector, dependency analyzer & health scorer for Bubble.io applications. Finds unused workflows, orphaned UI elements, unused database fields, inactive plugins, and more.",
-  "author": "",
+  "author": "Alexandr Motologa <alexandrmotologa@gmail.com>",
   "license": "MIT",
   "keywords": [
     "bubble",
