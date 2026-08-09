@@ -89,7 +89,5 @@
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
   },
-  "dependencies": {
-    "bubble-io-dead-code-detector": "^1.0.0"
-  }
+  "dependencies": {}
 }

@@ -10,3 +10,8 @@ coverage/
 # IMPORTANT: Never commit real .bubble files — they may contain sensitive app data
 *.bubble
 !tests/fixtures/*.bubble
+
+# VS Code extension build artifacts
+vscode-extension/node_modules/
+vscode-extension/dist/
+vscode-extension/*.vsix

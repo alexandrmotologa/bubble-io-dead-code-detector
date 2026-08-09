@@ -132,7 +132,7 @@ export function extractRefsFromObject(obj: unknown, refs: ExtractedRefs, depth =
 
   // Check if it's a TextExpression
   if (o['type'] === 'TextExpression' && o['entries']) {
-    extractRefsFromTextExpression(o as BubbleTextExpression, refs);
+    extractRefsFromTextExpression(o as unknown as BubbleTextExpression, refs);
     return;
   }
 

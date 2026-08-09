@@ -6,6 +6,7 @@
 
 import type { BubbleRule, Finding, RuleContext } from './rule.interface.js';
 import { isIgnored } from './rule.interface.js';
+import type { ParsedBubbleApp, ParsedElement } from '../../parser/schema.js';
 
 const BUILT_IN_FIELD_PATTERNS = [
   '_id', 'Created Date', 'Modified Date', 'Created By', 'slug', '_creator', '_p_deleted',
@@ -92,7 +93,7 @@ export const deadFieldRule: BubbleRule = {
  * Collects all data type slugs that appear in Search-type expressions.
  * If a type appears in a Search, its fields may be accessed dynamically.
  */
-function buildSearchedTypesSet(app: typeof app): Set<string> {
+function buildSearchedTypesSet(app: ParsedBubbleApp): Set<string> {
   const searched = new Set<string>();
 
   const allWorkflows = [
@@ -102,9 +103,8 @@ function buildSearchedTypesSet(app: typeof app): Set<string> {
   ];
 
   for (const wf of allWorkflows) {
-    for (const slug of wf.referencedDataTypeSlugs ?? []) {
-      if (slug) searched.add(slug);
-    }
+    // Each workflow has a single referencedDataTypeSlug (the primary type it operates on)
+    if (wf.referencedDataTypeSlug) searched.add(wf.referencedDataTypeSlug);
   }
 
   // Also check elements
@@ -117,8 +117,8 @@ function buildSearchedTypesSet(app: typeof app): Set<string> {
   return searched;
 }
 
-function flattenElements(elements: typeof app.pages[0]['elements']): typeof elements {
-  const result: typeof elements = [];
+function flattenElements(elements: ParsedElement[]): ParsedElement[] {
+  const result: ParsedElement[] = [];
   const queue = [...elements];
   while (queue.length > 0) {
     const el = queue.shift()!;

@@ -13,6 +13,7 @@ import { printConsoleReport } from '../../reporters/console-reporter.js';
 import { writeHtmlReport } from '../../reporters/html-reporter.js';
 import { writeJsonReport } from '../../reporters/json-reporter.js';
 import { loadConfig } from '../../config/config-loader.js';
+import type { RulesConfig } from '../../analyzer/rules/rule-engine.js';
 import type { Finding } from '../../analyzer/rules/rule.interface.js';
 
 export function registerWatchCommand(program: Command): void {
@@ -61,7 +62,7 @@ async function runWatch(options: {
       const minConf = (options.minConfidence as 'HIGH' | 'MEDIUM' | 'LOW') ?? 'LOW';
 
       const result = analyzeApp(parsedApp, {
-        rulesConfig: config.rules,
+        rulesConfig: config.rules as RulesConfig,
         only,
         minConfidence: minConf,
         ignore: {

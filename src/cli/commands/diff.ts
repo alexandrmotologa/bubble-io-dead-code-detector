@@ -10,6 +10,7 @@ import { join, resolve } from 'path';
 import { readBubbleFile, parseBubbleApp } from '../../parser/index.js';
 import { analyzeApp, type AnalysisResult } from '../../analyzer/index.js';
 import { loadConfig } from '../../config/config-loader.js';
+import type { RulesConfig } from '../../analyzer/rules/rule-engine.js';
 import type { Finding } from '../../analyzer/rules/rule.interface.js';
 
 export function registerDiffCommand(program: Command): void {
@@ -63,7 +64,7 @@ async function analyzeFile(filePath: string, config: ReturnType<typeof loadConfi
   const rawApp = readBubbleFile(filePath);
   const parsedApp = parseBubbleApp(rawApp);
   return analyzeApp(parsedApp, {
-    rulesConfig: config.rules,
+    rulesConfig: config.rules as RulesConfig,
     ignore: {
       workflows: config.ignore?.workflows,
       fields: config.ignore?.fields,

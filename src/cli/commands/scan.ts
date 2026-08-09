@@ -15,6 +15,7 @@ import { writeHtmlReport } from '../../reporters/html-reporter.js';
 import { writeSarifReport } from '../../reporters/sarif-reporter.js';
 import { writeCsvReport } from '../../reporters/csv-reporter.js';
 import { loadConfig } from '../../config/config-loader.js';
+import type { RulesConfig } from '../../analyzer/rules/rule-engine.js';
 
 export function registerScanCommand(program: Command): void {
   program
@@ -62,7 +63,7 @@ async function runScan(options: {
 
     spinner.text = 'Running analysis rules...';
     const result = analyzeApp(parsedApp, {
-      rulesConfig: config.rules,
+      rulesConfig: config.rules as RulesConfig,
       only,
       minConfidence: minConf,
       // Pass ignore lists from .bubblerc.json to all rules

@@ -7,7 +7,7 @@ import { join, resolve } from 'path';
 import { z } from 'zod';
 
 const RuleConfigSchema = z.object({
-  enabled: z.boolean().optional(),
+  enabled: z.boolean().optional().default(true),
   severity: z.enum(['error', 'warning', 'info']).optional(),
 }).passthrough();
 
@@ -37,6 +37,8 @@ const BubbleRcSchema = z.object({
 });
 
 export type BubbleRcConfig = z.infer<typeof BubbleRcSchema>;
+/** Re-exported alias for use in rule-engine — maps rule id → RuleConfig */
+export type RulesConfig = NonNullable<BubbleRcConfig['rules']>;
 
 const DEFAULT_CONFIG: BubbleRcConfig = {
   rules: {},

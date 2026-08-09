@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('bubbleDetector.clean', async (uri?: vscode.Uri) => {
       const filePath = await resolveFilePath(uri);
       if (!filePath) return;
-      await runClean(filePath);
+      await runClean(filePath, context);
     }),
   );
 }
@@ -69,10 +69,10 @@ async function runScan(
   openHtml: boolean,
   context: vscode.ExtensionContext,
 ): Promise<void> {
-  const config = vscode.workspace.getConfiguration('bubbleDetector');
-  const minConfidence = config.get<string>('minConfidence', 'MEDIUM');
-  const outputDir = config.get<string>('outputDir', './audit-results');
-  const autoOpenHtml = config.get<boolean>('autoOpenHtml', true);
+  const cfg = vscode.workspace.getConfiguration('bubbleDetector');
+  const minConfidence = cfg.get<string>('minConfidence', 'MEDIUM');
+  const outputDir = cfg.get<string>('outputDir', './audit-results');
+  const autoOpenHtml = cfg.get<boolean>('autoOpenHtml', true);
 
   const workspaceDir = dirname(filePath);
   const resolvedOutputDir = join(workspaceDir, outputDir.replace('./', ''));
@@ -85,7 +85,7 @@ async function runScan(
       title: '🫧 Bubble: Running dead code scan...',
       cancellable: false,
     },
-    async (progress) => {
+    async (progress: { report(value: { message?: string; increment?: number }): void }) => {
       progress.report({ message: 'Building dependency graph...' });
 
       const detectorBin = resolveDetectorBin(context);
@@ -110,7 +110,6 @@ async function runScan(
 
         progress.report({ message: 'Loading findings...' });
 
-        // Load JSON report and populate diagnostics
         const jsonReportPath = join(resolvedOutputDir, 'audit-report.json');
         if (existsSync(jsonReportPath)) {
           const report = JSON.parse(readFileSync(jsonReportPath, 'utf-8')) as ScanReport;
@@ -124,14 +123,15 @@ async function runScan(
             `🫧 Bubble Scan: ${count} issues — Score ${score}/100 (${grade})`,
             'Show Output',
             'View Problems',
-          ).then((action) => {
+          ).then((action: string | undefined) => {
             if (action === 'Show Output') outputChannel.show();
-            if (action === 'View Problems') vscode.commands.executeCommand('workbench.actions.view.problems');
-          });
+            if (action === 'View Problems') {
+              vscode.commands.executeCommand('workbench.actions.view.problems');
+            }
+          }, () => { /* ignored */ });
         }
 
-        // Open HTML report in browser
-        if ((openHtml || autoOpenHtml)) {
+        if (openHtml || autoOpenHtml) {
           const htmlPath = join(resolvedOutputDir, 'audit-report.html');
           if (existsSync(htmlPath)) {
             vscode.env.openExternal(vscode.Uri.file(htmlPath));
@@ -143,41 +143,56 @@ async function runScan(
         outputChannel.appendLine('─── Scan Error ────────────────────────────────');
         outputChannel.appendLine(output);
 
-        // Even if exit code 1 (fail-below threshold), we may have results
+        // Even on exit code 1 (fail-below), results may still be present
         const jsonReportPath = join(resolvedOutputDir, 'audit-report.json');
         if (existsSync(jsonReportPath)) {
           const report = JSON.parse(readFileSync(jsonReportPath, 'utf-8')) as ScanReport;
           populateDiagnostics(report, filePath, diagnostics);
           vscode.window.showWarningMessage(
-            `🫧 Bubble Scan completed with issues. Check Problems panel.`,
+            '🫧 Bubble Scan completed with issues. Check Problems panel.',
             'Show Output',
-          ).then((action) => { if (action === 'Show Output') outputChannel.show(); });
+          ).then((action: string | undefined) => {
+            if (action === 'Show Output') outputChannel.show();
+          }, () => { /* ignored */ });
         } else {
-          vscode.window.showErrorMessage(`🫧 Bubble Scan failed: ${error.message ?? output}`);
+          vscode.window.showErrorMessage(
+            `🫧 Bubble Scan failed: ${error.message ?? output}`,
+          );
         }
       }
     },
   );
 }
 
-async function runClean(filePath: string): Promise<void> {
+async function runClean(filePath: string, context: vscode.ExtensionContext): Promise<void> {
   const workspaceDir = dirname(filePath);
-  const detectorBin = join(__dirname, '..', '..', 'node_modules', 'bubble-io-dead-code-detector', 'bin', 'bubble-detector.js');
+  const detectorBin = resolveDetectorBin(context);
 
   await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: '🫧 Bubble: Clean (dry-run)...', cancellable: false },
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: '🫧 Bubble: Clean (dry-run)...',
+      cancellable: false,
+    },
     async () => {
       try {
         const { stdout } = await execFileAsync(
           'node',
-          [detectorBin, 'clean', '--file', filePath, '--dry-run', '--min-confidence', 'MEDIUM',
-            '--only', 'dead-plugin,dead-option-set,dead-style'],
+          [
+            detectorBin, 'clean',
+            '--file', filePath,
+            '--dry-run',
+            '--min-confidence', 'MEDIUM',
+            '--only', 'dead-plugin,dead-option-set,dead-style',
+          ],
           { cwd: workspaceDir, timeout: 30000 },
         );
         outputChannel.appendLine('─── Clean Dry-Run ─────────────────────────────');
         outputChannel.appendLine(stdout);
         outputChannel.show();
-        vscode.window.showInformationMessage('🫧 Bubble Clean: dry-run complete. Check Output panel for details.');
+        vscode.window.showInformationMessage(
+          '🫧 Bubble Clean: dry-run complete. Check Output panel for details.',
+        );
       } catch (err: unknown) {
         const error = err as { stdout?: string; message?: string };
         outputChannel.appendLine(error.stdout ?? error.message ?? 'Clean error');
@@ -192,13 +207,11 @@ async function runClean(filePath: string): Promise<void> {
 async function resolveFilePath(uri?: vscode.Uri): Promise<string | undefined> {
   if (uri) return uri.fsPath;
 
-  // Active editor fallback
   const editor = vscode.window.activeTextEditor;
   if (editor && editor.document.fileName.endsWith('.bubble')) {
     return editor.document.fileName;
   }
 
-  // File picker
   const result = await vscode.window.showOpenDialog({
     canSelectMany: false,
     filters: { 'Bubble App Export': ['bubble'] },
@@ -208,9 +221,10 @@ async function resolveFilePath(uri?: vscode.Uri): Promise<string | undefined> {
 }
 
 function resolveDetectorBin(context: vscode.ExtensionContext): string {
-  // Try local node_modules first (workspace install), then extension bundled bin
+  // Try workspace-local node_modules first (preferred)
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
   const localBin = join(
-    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '',
+    workspaceRoot,
     'node_modules',
     'bubble-io-dead-code-detector',
     'bin',
@@ -218,7 +232,14 @@ function resolveDetectorBin(context: vscode.ExtensionContext): string {
   );
   if (existsSync(localBin)) return localBin;
 
-  return join(context.extensionPath, 'node_modules', 'bubble-io-dead-code-detector', 'bin', 'bubble-detector.js');
+  // Fall back to extension-bundled bin
+  return join(
+    context.extensionPath,
+    'node_modules',
+    'bubble-io-dead-code-detector',
+    'bin',
+    'bubble-detector.js',
+  );
 }
 
 function populateDiagnostics(
@@ -228,11 +249,12 @@ function populateDiagnostics(
 ): void {
   const uri = vscode.Uri.file(filePath);
   const diags: vscode.Diagnostic[] = (report.findings ?? []).map((f) => {
-    const severity = f.severity === 'error'
-      ? vscode.DiagnosticSeverity.Error
-      : f.severity === 'warning'
-        ? vscode.DiagnosticSeverity.Warning
-        : vscode.DiagnosticSeverity.Information;
+    const severity =
+      f.severity === 'error'
+        ? vscode.DiagnosticSeverity.Error
+        : f.severity === 'warning'
+          ? vscode.DiagnosticSeverity.Warning
+          : vscode.DiagnosticSeverity.Information;
 
     const diag = new vscode.Diagnostic(
       new vscode.Range(0, 0, 0, 0),
