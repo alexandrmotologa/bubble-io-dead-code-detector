@@ -1,251 +1,225 @@
-<div align="center">
+# bubble-io-dead-code-detector
 
-# 🫧 bubble-io-dead-code-detector
-
-**Dead code detector, dependency analyzer & health scorer for Bubble.io applications**
+Dead code detector, dependency analyzer, and health scorer for Bubble.io applications.
 
 [![npm version](https://img.shields.io/npm/v/bubble-io-dead-code-detector?color=7c3aed&style=flat-square)](https://www.npmjs.com/package/bubble-io-dead-code-detector)
 [![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/alexandrmotologa.bubble-dead-code-detector-vscode?color=007ACC&label=VS%20Code&style=flat-square)](https://marketplace.visualstudio.com/items?itemName=alexandrmotologa.bubble-dead-code-detector-vscode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?style=flat-square)](https://nodejs.org)
 
-*Find unused workflows, orphaned database fields, inactive plugins, and more — before they become a problem.*
-
-</div>
+Find unused workflows, orphaned database fields, inactive plugins, and unreferenced styles before deployment.
 
 ---
 
-## Why does this tool exist?
+## Why this tool exists
 
-Large Bubble.io apps accumulate technical debt silently:
+Large Bubble.io applications accumulate technical debt over development cycles:
 
-- 🧹 **Half-deleted workflows** that are never triggered
-- 🗄️ **Database fields** created during prototyping, never referenced
-- 🔌 **Plugins installed but never used** — slowing page loads
-- 🎨 **Styles defined but not applied** to any element
-- 🔐 **Data types without privacy rules** — potential data leaks
+- Workflows that are never triggered by user interactions or backend events
+- Database fields created during prototyping that have no references
+- Plugins installed but not tied to elements or actions, increasing bundle size
+- Custom styles defined in the design tab but not applied to any element
+- Data types without privacy rules, creating security exposure risks
 
-Bubble provides no built-in linter or garbage collector. This tool fills that gap.
+Bubble.io provides no native garbage collection or linter for application exports. This tool parses `.bubble` export files and identifies dead assets deterministically.
 
 ---
 
-## Two Ways to Use It
+## Usage modes
 
-### Option 1 — VS Code Extension (Recommended for most users)
+### VS Code extension
 
-> No terminal knowledge required. Works entirely inside VS Code.
+The extension integrates directly into the editor without requiring terminal setup.
 
-**Install from the Marketplace:**
+**Installation:**
+1. Open VS Code.
+2. Press `Ctrl+Shift+X` and search for **Bubble.io Dead Code Detector**.
+3. Select **Install**.
 
-1. Open VS Code
-2. Press `Ctrl+Shift+X` to open Extensions
-3. Search for **"Bubble.io Dead Code Detector"**
-4. Click **Install**
-
-**Or install via command line:**
+Or install via terminal:
 ```bash
 code --install-extension alexandrmotologa.bubble-dead-code-detector-vscode
 ```
 
-**How to use the extension:**
-1. Open your project folder in VS Code
-2. Right-click any `.bubble` file in the Explorer panel
-3. Select **"Bubble: Run Dead Code Scan"**
-4. Findings appear in the **Problems panel** (`Ctrl+Shift+M`)
-5. The HTML visual report opens automatically in your browser
+**Running an audit:**
+1. Open your workspace containing a `.bubble` export file.
+2. Right-click the `.bubble` file in the Explorer.
+3. Select **Bubble: Run Dead Code Scan**.
+4. Review findings in the Problems panel (`Ctrl+Shift+M`) or the generated HTML report.
 
-**Extension commands (Command Palette — `Ctrl+Shift+P`):**
+**Extension commands:**
 
-| Command | What it does |
-|---|---|
-| `Bubble: Run Dead Code Scan` | Full audit, shows results in Problems panel |
-| `Bubble: Scan + Open HTML Report` | Same, but always opens visual HTML report |
-| `Bubble: Clean (dry-run preview)` | Shows what can be safely removed |
+| Command | Action |
+| :--- | :--- |
+| `Bubble: Run Dead Code Scan` | Run complete audit and report findings in Problems view |
+| `Bubble: Scan + Open HTML Report` | Run audit and launch interactive visual graph in browser |
+| `Bubble: Clean (dry-run preview)` | Show assets eligible for removal without modifying file |
 
-**Extension settings (`File → Preferences → Settings → Bubble Dead Code Detector`):**
+**Extension settings:**
 
 | Setting | Default | Description |
-|---|---|---|
-| `bubbleDetector.minConfidence` | `MEDIUM` | Minimum confidence level to show |
-| `bubbleDetector.outputDir` | `./audit-results` | Where to save reports |
-| `bubbleDetector.autoOpenHtml` | `true` | Open HTML report automatically |
+| :--- | :--- | :--- |
+| `bubbleDetector.minConfidence` | `MEDIUM` | Minimum confidence threshold for reported issues |
+| `bubbleDetector.outputDir` | `./audit-results` | Directory for generated reports |
+| `bubbleDetector.autoOpenHtml` | `true` | Open HTML visual report automatically |
 
 ---
 
-### Option 2 — CLI (Command Line Interface)
+### Command-line interface
 
-> For developers, CI/CD pipelines, and automation.
+Suitable for local terminal use, shell scripts, and CI/CD pipelines.
 
 #### Install globally
-
 ```bash
 npm install -g bubble-io-dead-code-detector
 ```
 
-#### Run interactive mode (no arguments needed)
-
+#### Run interactive mode
 ```bash
 bubble-detector
 ```
 
-#### Or use CLI flags directly
-
+#### Run directly with CLI flags
 ```bash
-# Full audit
+# Run full audit
 bubble-detector scan --file ./my-app.bubble
 
-# Audit with visual HTML graph
+# Generate interactive HTML graph
 bubble-detector scan --file ./my-app.bubble --html
 
-# All report formats at once
+# Export all report formats simultaneously
 bubble-detector scan --file ./my-app.bubble --json --html --markdown --csv --sarif --output-dir ./audit
 
-# Fail in CI if health score drops below 70
+# Enforce minimum health score in CI pipeline
 bubble-detector scan --file ./my-app.bubble --fail-below 70
 
-# Preview dead code removal (safe dry-run)
+# Preview cleanup changes (safe dry-run)
 bubble-detector clean --file ./my-app.bubble --dry-run
 
-# Actually clean (creates backup automatically)
+# Apply cleanup (creates timestamped backup automatically)
 bubble-detector clean --file ./my-app.bubble --output ./cleaned-app.bubble
 
-# Watch mode — auto re-scan when file changes
+# Watch mode: re-scan automatically on file save
 bubble-detector watch --file ./my-app.bubble --html
 
-# Compare two versions
+# Compare schema and debt between two export versions
 bubble-detector diff --before ./v1.bubble --after ./v2.bubble
 ```
 
 ---
 
-## How to Get Your `.bubble` File
+## Exporting the application file
 
-1. Open your Bubble app editor
-2. Go to **Settings** → **Export App**
-3. Click **Export** — this downloads a `.bubble` file
-4. Use it with the VS Code extension or CLI
+1. Open your application in the Bubble editor.
+2. Navigate to **Settings** -> **Export App**.
+3. Click **Export** to download the `.bubble` file.
+4. Supply the downloaded file to the CLI or open it in VS Code.
 
-> ⚠️ Warning: The `.bubble` file contains your full app structure and potentially sensitive configuration. Keep it private — never commit it to public repositories.
+> [!NOTE]
+> The `.bubble` export contains full application structure and configuration. Do not commit sensitive exports to public repositories.
 
 ---
 
-## CLI Commands Reference
+## Command reference
 
-### `scan` — Full App Audit
-
-```
+### `scan`
+```text
 Options:
   -f, --file <path>          Path to .bubble export file (required)
   --json                     Export machine-readable audit-report.json
   --html                     Generate interactive HTML visual graph
-  --markdown                 Generate Notion/Confluence-ready Markdown report
-  --csv                      Export audit-report.csv for Excel / Google Sheets
-  --sarif                    Export SARIF for GitHub Actions / GitLab CI
+  --markdown                 Generate Markdown report
+  --csv                      Export audit-report.csv for spreadsheets
+  --sarif                    Export SARIF for GitHub Code Scanning / GitLab SAST
   --output-dir <dir>         Output directory (default: ./audit-results)
-  --only <rules>             Run only specific rules (comma-separated)
-  --min-confidence <level>   Report only HIGH|MEDIUM|LOW findings (default: LOW)
-  --fail-below <score>       Exit code 1 if health score is below threshold
+  --only <rules>             Run only specified rules (comma-separated)
+  --min-confidence <level>   Filter by confidence: HIGH, MEDIUM, LOW (default: LOW)
+  --fail-below <score>       Exit with code 1 if health score is below threshold
 ```
 
-### `clean` — Safe Dead Code Removal
-
-```
+### `clean`
+```text
 Options:
   -f, --file <path>          Path to .bubble export file (required)
-  -o, --output <path>        Output path for cleaned file (default: ./cleaned-app.bubble)
+  -o, --output <path>        Destination path for cleaned export (default: ./cleaned-app.bubble)
   --backup-dir <dir>         Backup directory (default: ./backups)
-  --dry-run                  Preview changes without applying them
-  --force                    Skip interactive confirmation
-  --min-confidence <level>   Minimum confidence for auto-delete (default: HIGH)
-  --only <rules>             Only clean specific rule types:
-                               dead-workflow, dead-plugin,
-                               dead-option-set, dead-style
-  --rollback                 Restore from the latest backup
+  --dry-run                  Preview modifications without writing to disk
+  --force                    Skip interactive confirmation prompt
+  --min-confidence <level>   Minimum confidence for automatic deletion (default: HIGH)
+  --only <rules>             Target specific rules: dead-workflow, dead-plugin, dead-option-set, dead-style
+  --rollback                 Restore from the most recent backup
 ```
 
-### `watch` — Auto Re-Scan on File Change
-
+### `watch`
+Monitors a `.bubble` file and triggers re-analysis upon file changes:
 ```bash
-# Re-scans automatically every time you save a new .bubble export
-bubble-detector watch --file ./my-app.bubble
-
-# With HTML report regeneration
 bubble-detector watch --file ./my-app.bubble --html
 ```
 
-Shows **delta output** between scans — which issues were fixed and which are new.
-
-### `diff` — Compare Two App Versions
-
+### `diff`
+Compares two application snapshots and produces a delta report:
 ```bash
-# Compare two .bubble exports and show what changed
 bubble-detector diff --before ./app-v1.bubble --after ./app-v2.bubble
-
-# Export diff as JSON
-bubble-detector diff --before ./v1.bubble --after ./v2.bubble --json
 ```
 
-Output includes: health score delta, fixed issues, newly introduced issues, unchanged count.
-
-### `validate` — Check File Validity
-
+### `validate`
+Verifies JSON integrity and top-level schema keys:
 ```bash
 bubble-detector validate ./my-app.bubble
 ```
 
-### `init` — Generate Config File
-
+### `init`
+Generates a starter `.bubblerc.json` configuration file:
 ```bash
 bubble-detector init
-# Creates .bubblerc.json in the current directory
 ```
 
 ---
 
-## Output: Health Score
+## Health score evaluation
 
-Every scan produces a **0-100 health score**:
+Each scan calculates an overall health index from 0 to 100:
 
-| Score | Grade | Description |
-|---|---|---|
-| 90–100 | 🟢 Excellent | Clean and maintainable |
-| 75–89 | 🟡 Good | Minor cleanup recommended |
-| 55–74 | 🟠 Fair | Moderate technical debt |
-| 35–54 | 🔴 Poor | Significant refactoring needed |
-| 0–34 | 🔴 Critical | App is heavily bloated |
-
----
-
-## What Gets Detected
-
-| Rule | Severity | What it finds |
-|---|---|---|
-| `dead-workflow` | Error | Workflows never triggered by any UI element |
-| `dead-field` | Warning | Database fields with no references anywhere |
-| `dead-plugin` | Error | Installed plugins with no element or workflow usage |
-| `dead-style` | Info | Styles defined but not applied to any element |
-| `dead-option-set` | Warning | Option sets not referenced in any expression |
-| `complexity` | Warning | Workflows with too many actions, pages with too many elements |
-| `security` | Error | Missing privacy rules, data exposed via API without restrictions |
+| Score | Rating | Recommendation |
+| :--- | :--- | :--- |
+| 90-100 | Excellent | Clean schema, minimal unused definitions |
+| 75-89 | Good | Minor dead code cleanup suggested |
+| 55-74 | Fair | Noticeable technical debt |
+| 35-54 | Poor | Architectural refactoring recommended |
+| 0-34 | Critical | Severe schema and workflow accumulation |
 
 ---
 
-## Reports
+## Detection rules
 
-| Format | Flag | Use Case |
-|---|---|---|
-| Console | (default) | Rich terminal output — development use |
-| HTML | `--html` | Interactive visual dependency graph |
-| JSON | `--json` | Machine-readable — CI pipelines and scripts |
-| Markdown | `--markdown` | Notion, Confluence, GitHub documentation |
-| CSV | `--csv` | Excel, Google Sheets |
-| SARIF | `--sarif` | GitHub Code Scanning, GitLab SAST, Azure DevOps |
+| Rule | Severity | Condition |
+| :--- | :--- | :--- |
+| `dead-workflow` | Error | Workflows never triggered by UI elements or backend events |
+| `dead-field` | Warning | Database fields with zero references across the application |
+| `dead-plugin` | Error | Installed plugins without associated elements or actions |
+| `dead-style` | Info | Style definitions not applied to any page element |
+| `dead-option-set` | Warning | Option sets unreferenced in any visual or workflow expression |
+| `complexity` | Warning | Workflows exceeding action thresholds or dense page elements |
+| `security` | Error | Missing privacy rules or unconstrained public endpoints |
+
+---
+
+## Output formats
+
+| Format | Option | Primary use case |
+| :--- | :--- | :--- |
+| Console | Default | Formatted terminal output |
+| HTML | `--html` | Interactive dependency graph and inspection UI |
+| JSON | `--json` | Pipeline integration and custom scripting |
+| Markdown | `--markdown` | Documentation and team wiki exports |
+| CSV | `--csv` | Spreadsheet tracking |
+| SARIF | `--sarif` | GitHub Code Scanning and CI security dashboards |
 
 ---
 
 ## Configuration (`.bubblerc.json`)
 
-Run `bubble-detector init` to generate a config file, then customize:
+Configure global scan options via `.bubblerc.json`:
 
 ```json
 {
@@ -281,13 +255,15 @@ Run `bubble-detector init` to generate a config file, then customize:
 
 ---
 
-## CI/CD Integration (GitHub Actions)
+## CI/CD integration
+
+Run automated audits in GitHub Actions workflows:
 
 ```yaml
 name: Bubble App Audit
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+    - cron: '0 9 * * 1'
 
 jobs:
   audit:
@@ -308,32 +284,26 @@ jobs:
 
 ---
 
-## Safety (Clean Command)
+## Safety mechanisms for cleanup
 
-1. **Mandatory backup** — timestamped `.bubble.bak` before any change
-2. **Dry-run first** — preview what would be removed
-3. **Confidence gate** — only deletes `HIGH` confidence items by default
-4. **Interactive confirmation** — prompts before applying changes
-5. **Rollback support** — `--rollback` to restore from backup
+1. **Automatic backups**: Generates a timestamped `.bubble.bak` before making changes.
+2. **Dry-run mode**: Allows inspecting modifications prior to execution.
+3. **Confidence gating**: Restricts automated deletion to high-confidence targets by default.
+4. **Interactive confirmation**: Prompts the user before applying modifications.
+5. **Rollback command**: Supports one-command recovery via `--rollback`.
 
 ---
 
 ## Documentation
 
-- [Full Usage Guide (USAGE.md)](USAGE.md) — Step-by-step instructions for all features
-- [Architecture Guide](docs/architecture.md) — How the system works internally
-- [Contributing Guide](docs/contributing.md) — How to add new rules or reporters
-- [Custom Rules Guide](docs/custom-rules.md) — Writing your own analysis rules
-- [.bubble Schema Reference](docs/bubble-schema.md) — File format documentation
+- [Usage Guide](USAGE.md)
+- [Architecture](docs/architecture.md)
+- [Contributing](CONTRIBUTING.md)
+- [Custom Rules](docs/custom-rules.md)
+- [Schema Reference](docs/bubble-schema.md)
 
 ---
 
 ## License
 
-MIT
-
----
-
-<div align="center">
-Made for the Bubble.io community
-</div>
+MIT License. Copyright (c) 2026 Alexandr Motologa.
